@@ -1,0 +1,7 @@
+transformers
+datasets
+pillow
+accelerate
+wandb
+parquet
+evaluate
