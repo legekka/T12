@@ -26,8 +26,9 @@ def get_class_weights(dataset):
         for l in label:
             class_counts[l] += 1
     class_weights = np.sum(class_counts) / (config.num_classes * class_counts)
-    class_weights = torch.tensor(class_weights, dtype=torch.float32)  
-    class_weights = torch.clamp(class_weights, max=10)
+    class_weights = torch.tensor(class_weights, dtype=torch.float32)
+
+    class_weights = torch.clamp(class_weights, max=5, min=5e-2)
 
     return class_weights
 
