@@ -10,7 +10,7 @@
     "num_workers": 4,
     "max_steps": 200000,
     "save_steps": 25000,
-    "learning_rate": 1e-4,
+    "learning_rate": 1e-5,
     "eta_min": 1e-6,
     "warmup_steps": 100,
     "scheduler": "cosine",
