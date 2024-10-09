@@ -28,11 +28,6 @@ def compute_metrics(p):
     preds = (sigmoid_logits > 0.5).int().numpy()
     labels = labels.astype(int)
 
-    # Compute per-class metrics
-    precision_per_class, recall_per_class, f1_per_class, support_per_class = precision_recall_fscore_support(
-        labels, preds, average=None, zero_division=0
-    )
-
     # Compute macro and micro averages
     precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(
         labels, preds, average='macro', zero_division=0
