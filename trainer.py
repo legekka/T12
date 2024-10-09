@@ -22,6 +22,8 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 from sklearn.metrics import precision_recall_fscore_support, hamming_loss, accuracy_score
 import numpy as np
 
+import json
+
 def compute_metrics(p):
     logits, labels = p
     sigmoid_logits = torch.sigmoid(torch.tensor(logits))
@@ -120,7 +122,7 @@ class CustomTrainer(Trainer):
             return
 
         # Initialize the optimizer manually
-        self.optimizer = AdamW(self.model.parameters(), lr=self.args.learning_rate)
+        self.optimizer = AdamW(self.model.parameters(), lr=self.args.learning_rate, weight_decay=0.01)
 
         # Initialize the scheduler manually
         if config.scheduler == "cosine" and config.eta_min != 0.0:
@@ -138,13 +140,13 @@ class CustomTrainer(Trainer):
                 num_training_steps=num_training_steps
             )
 
-    def compute_loss(self, model, inputs, return_outputs=False):
-        global loss_fn
-        labels = inputs.get("labels")
-        outputs = model(**inputs)
-        logits = outputs.get("logits")
-        loss = loss_fn(logits, labels)
-        return (loss, outputs) if return_outputs else loss
+    # def compute_loss(self, model, inputs, return_outputs=False):
+    #     global loss_fn
+    #     labels = inputs.get("labels")
+    #     outputs = model(**inputs)
+    #     logits = outputs.get("logits")
+    #     loss = loss_fn(logits, labels)
+    #     return (loss, outputs) if return_outputs else loss
 
 # if we are on windows, we need to check it, and set the torch backend to gloo
 if os.name == 'nt':
@@ -217,12 +219,12 @@ if __name__ == '__main__':
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
 
-    global loss_fn
-    class_weights = get_class_weights(train_dataset)
-    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
+    # global loss_fn
+    # class_weights = get_class_weights(train_dataset)
+    # loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
 
-    if accelerator.is_main_process:
-        print('Class weights calculated:', class_weights)
+    # if accelerator.is_main_process:
+    #     print('Class weights calculated:', class_weights)
 
     # Setting up Trainer
 
