@@ -301,14 +301,6 @@ if __name__ == '__main__':
         wandb.config.update(config._jsonData)
         wandb.watch(model)
 
-        if args.resume is not None:
-            # load the global step from the trainer_state.json file
-            import json
-            with open(f"{args.resume}/trainer_state.json", "r") as f:
-                trainer_state = json.load(f)
-            # set the current step in wandb to the global step to continue the graphs
-            wandb.run.step = trainer_state["global_step"]
-
     model.config.use_cache = False 
 
     model, optimizer, scheduler, train_dataset, eval_dataset = accelerator.prepare(
