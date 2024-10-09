@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     num_training_steps = num_epochs * len(train_dataset) // (config.batch_size * config.gradient_accumulation_steps * accelerator.num_processes)
 
-    optimizer = AdamW(model.parameters(), lr=config.learning_rate)
+    optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=0.01)
     if config.scheduler == "cosine" and config.eta_min != 0.0:
         scheduler = CosineAnnealingWithWarmupAndEtaMin(
             optimizer,
