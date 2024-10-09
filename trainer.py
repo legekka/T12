@@ -22,8 +22,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 from sklearn.metrics import precision_recall_fscore_support, hamming_loss, accuracy_score
 import numpy as np
 
-import json
-
 def compute_metrics(p):
     logits, labels = p
     sigmoid_logits = torch.sigmoid(torch.tensor(logits))
