@@ -11,9 +11,10 @@
     "max_steps": 500000,
     "eval_steps": 10000,
     "save_steps": 50000,
-    "learning_rate": 1e-5,
+    "learning_rate": 8e-5,
+    "eta_min": 1e-6,
     "warmup_steps": 500,
-    "scheduler": "constant_with_warmup",
+    "scheduler": "cosine",
     "logging_steps": 10,
     "wandb": {
         "project": "TaggerNN-v12",
