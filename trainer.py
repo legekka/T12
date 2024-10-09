@@ -19,6 +19,43 @@ from modules.scheduler import CosineAnnealingWithWarmupAndEtaMin
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+from sklearn.metrics import precision_recall_fscore_support, hamming_loss, accuracy_score
+import numpy as np
+
+def compute_metrics(p):
+    logits, labels = p
+    sigmoid_logits = torch.sigmoid(torch.tensor(logits))
+    preds = (sigmoid_logits > 0.5).int().numpy()
+    labels = labels.astype(int)
+
+    # Compute per-class metrics
+    precision_per_class, recall_per_class, f1_per_class, support_per_class = precision_recall_fscore_support(
+        labels, preds, average=None, zero_division=0
+    )
+
+    # Compute macro and micro averages
+    precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(
+        labels, preds, average='macro', zero_division=0
+    )
+    precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(
+        labels, preds, average='micro', zero_division=0
+    )
+
+    # Compute Hamming loss and subset accuracy
+    hamming_loss_value = hamming_loss(labels, preds)
+    subset_accuracy = accuracy_score(labels, preds)
+
+    return {
+        'precision_micro': precision_micro,
+        'recall_micro': recall_micro,
+        'f1_micro': f1_micro,
+        'precision_macro': precision_macro,
+        'recall_macro': recall_macro,
+        'f1_macro': f1_macro,
+        'hamming_loss': hamming_loss_value,
+        'subset_accuracy': subset_accuracy,
+    }
+
 def get_class_weights(dataset):
     labels = dataset['label']
     class_counts = np.zeros(config.num_classes)
@@ -80,34 +117,6 @@ def val_transforms(examples):
 
     return examples
 
-import torch.nn.functional as F
-
-class FocalLoss(torch.nn.Module):
-    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha  # Class weights
-        self.gamma = gamma
-        self.reduction = reduction
-
-    def forward(self, logits, targets):
-        # Compute the binary cross-entropy loss
-        BCE_loss = F.binary_cross_entropy_with_logits(logits, targets, pos_weight=self.alpha, reduction='none')
-
-        # Compute the probability
-        probas = torch.sigmoid(logits)
-        pt = probas * targets + (1 - probas) * (1 - targets)
-
-        # Apply the focal loss scaling factor
-        focal_weight = (1 - pt) ** self.gamma
-        F_loss = focal_weight * BCE_loss
-
-        if self.reduction == 'mean':
-            return F_loss.mean()
-        elif self.reduction == 'sum':
-            return F_loss.sum()
-        else:
-            return F_loss
-
 class CustomTrainer(Trainer):
     def create_optimizer_and_scheduler(self, num_training_steps: int):
         global config
@@ -134,15 +143,8 @@ class CustomTrainer(Trainer):
                 num_training_steps=num_training_steps
             )
 
-    # def compute_loss(self, model, inputs, return_outputs=False):
-    #     global loss_fn
-    #     labels = inputs.get("labels")
-    #     outputs = model(**inputs)
-    #     logits = outputs.get("logits")
-    #     loss = loss_fn(logits, labels)
-    #     return (loss, outputs) if return_outputs else loss
-
-    def compute_loss(self, model, inputs, return_outputs=False): 
+    def compute_loss(self, model, inputs, return_outputs=False):
+        global loss_fn
         labels = inputs.get("labels")
         outputs = model(**inputs)
         logits = outputs.get("logits")
@@ -220,13 +222,9 @@ if __name__ == '__main__':
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
 
-    # global loss_fn
-    # class_weights = get_class_weights(train_dataset)
-    # loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
-    
     global loss_fn
     class_weights = get_class_weights(train_dataset)
-    loss_fn = FocalLoss(alpha=class_weights.to(device), gamma=2.0)
+    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
 
     if accelerator.is_main_process:
         print('Class weights calculated:', class_weights)
@@ -234,7 +232,7 @@ if __name__ == '__main__':
     # Setting up Trainer
 
     if config.num_epochs is None:
-        num_epochs = (config.max_steps * config.batch_size * config.gradient_accumulation_steps * accelerator.num_processes) // len(train_dataset)
+        num_epochs = (config.max_steps * config.batch_size * config.gradient_accumulation_steps * accelerator.num_processes) / len(train_dataset)
     else:
         num_epochs = config.num_epochs
 
@@ -299,6 +297,7 @@ if __name__ == '__main__':
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
+        compute_metrics=compute_metrics,
         callbacks=[],
     )
 
