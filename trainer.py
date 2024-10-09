@@ -25,10 +25,19 @@ def get_class_weights(dataset):
     for label in labels:
         for l in label:
             class_counts[l] += 1
-    class_weights = np.sum(class_counts) / (config.num_classes * class_counts)
+
+    # Avoid division by zero
+    class_counts[class_counts == 0] = 1
+
+    # Calculate class weights inversely proportional to class frequencies
+    class_weights = np.sum(class_counts) / class_counts
     class_weights = torch.tensor(class_weights, dtype=torch.float32)
 
-    class_weights = torch.clamp(class_weights, max=5, min=5e-2)
+    # Normalize weights to have a mean of 1
+    class_weights = class_weights / class_weights.mean()
+
+    # Clamping weights to avoid extreme values
+    class_weights = torch.clamp(class_weights, min=0.05, max=5)
 
     return class_weights
 
