@@ -186,7 +186,7 @@ if __name__ == '__main__':
     # Setting up Trainer
 
     if config.num_epochs is None:
-        num_epochs = config.max_steps * config.batch_size * config.gradient_accumulation_steps * accelerator.num_processes // len(train_dataset)
+        num_epochs = (config.max_steps * config.batch_size * config.gradient_accumulation_steps * accelerator.num_processes) // len(train_dataset)
     else:
         num_epochs = config.num_epochs
 
