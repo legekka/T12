@@ -80,6 +80,34 @@ def val_transforms(examples):
 
     return examples
 
+import torch.nn.functional as F
+
+class FocalLoss(torch.nn.Module):
+    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha  # Class weights
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, logits, targets):
+        # Compute the binary cross-entropy loss
+        BCE_loss = F.binary_cross_entropy_with_logits(logits, targets, pos_weight=self.alpha, reduction='none')
+
+        # Compute the probability
+        probas = torch.sigmoid(logits)
+        pt = probas * targets + (1 - probas) * (1 - targets)
+
+        # Apply the focal loss scaling factor
+        focal_weight = (1 - pt) ** self.gamma
+        F_loss = focal_weight * BCE_loss
+
+        if self.reduction == 'mean':
+            return F_loss.mean()
+        elif self.reduction == 'sum':
+            return F_loss.sum()
+        else:
+            return F_loss
+
 class CustomTrainer(Trainer):
     def create_optimizer_and_scheduler(self, num_training_steps: int):
         global config
@@ -106,8 +134,15 @@ class CustomTrainer(Trainer):
                 num_training_steps=num_training_steps
             )
 
-    def compute_loss(self, model, inputs, return_outputs=False):
-        global loss_fn
+    # def compute_loss(self, model, inputs, return_outputs=False):
+    #     global loss_fn
+    #     labels = inputs.get("labels")
+    #     outputs = model(**inputs)
+    #     logits = outputs.get("logits")
+    #     loss = loss_fn(logits, labels)
+    #     return (loss, outputs) if return_outputs else loss
+
+    def compute_loss(self, model, inputs, return_outputs=False): 
         labels = inputs.get("labels")
         outputs = model(**inputs)
         logits = outputs.get("logits")
@@ -185,10 +220,14 @@ if __name__ == '__main__':
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
 
+    # global loss_fn
+    # class_weights = get_class_weights(train_dataset)
+    # loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
+    
     global loss_fn
     class_weights = get_class_weights(train_dataset)
-    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
-    
+    loss_fn = FocalLoss(alpha=class_weights.to(device), gamma=2.0)
+
     if accelerator.is_main_process:
         print('Class weights calculated:', class_weights)
 
