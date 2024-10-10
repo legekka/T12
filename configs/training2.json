@@ -1,0 +1,24 @@
+{
+    "name": "TaggerNN-v12",
+    "model": "models/T12",
+    "output_dir": "outputs/T12",
+    "train_dataset": "data/sankaku-dataset",
+    "eval_dataset_split_size": 1000,
+    "num_classes": 7000,
+    "batch_size": 64,
+    "gradient_accumulation_steps": 8,
+    "num_workers": 4,
+    "max_steps": 500000,
+    "eval_steps": 10000,
+    "save_steps": 25000,
+    "learning_rate": 1e-4,
+    "eta_min": 1e-6,
+    "warmup_steps": 500,
+    "scheduler": "cosine",
+    "logging_steps": 10,
+    "wandb": {
+        "project": "TaggerNN-v12",
+        "name": "TaggerNN-v12-2",
+        "tags": ["ViT", "T12"]
+    }
+}
