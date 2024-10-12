@@ -33,7 +33,5 @@ model.config.problem_type = "multi_label_classification"
 # print parameter count 
 print('Number of parameters:', model.num_parameters())
 
-model.from_pretrained('google/vit-base-patch16-224')
-
 # save model to disk
 model.save_pretrained('./models/T12')
