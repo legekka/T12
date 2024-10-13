@@ -30,8 +30,11 @@ model.config.id2label = id2label
 model.config.label2id = label2id
 model.config.problem_type = "multi_label_classification"
 
+
 # print parameter count 
 print('Number of parameters:', model.num_parameters())
+
+print(model)
 
 # save model to disk
 model.save_pretrained('./models/T12')
