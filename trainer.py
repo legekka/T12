@@ -24,6 +24,8 @@ import numpy as np
 
 def compute_metrics(p):
     logits, labels = p
+    logits = logits[:, :config.train_classes]
+    labels = labels[:, :config.train_classes]
     sigmoid_logits = torch.sigmoid(torch.tensor(logits))
     preds = (sigmoid_logits > 0.5).int().numpy()
     labels = labels.astype(int)
