@@ -30,10 +30,10 @@ model.config.problem_type = "multi_label_classification"
 
 import torch.nn as nn
 
-model.classifier = nn.Sequential(
-    nn.Dropout(p=0.4, inplace=True),
-    nn.Linear(in_features=model.config.hidden_size, out_features=model.config.num_labels, bias=True),
-)
+# model.classifier = nn.Sequential(
+#     nn.Dropout(p=0.4, inplace=True),
+#     nn.Linear(in_features=model.config.hidden_size, out_features=model.config.num_labels, bias=True),
+# )
 
 
 # print parameter count 

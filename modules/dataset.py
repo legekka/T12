@@ -18,3 +18,34 @@ def load_dataset(data_dir, split):
             print("Renamed the column 'labels' to 'label'")
 
         return dataset
+    
+def filter_dataset(dataset, num_labels, minimum_labels=-1, num_proc=12):
+
+    def _keep_labels(examples):
+        batch_labels = []
+        for example in examples["label"]:
+            labels = []
+            for label in example:
+                if label < num_labels:
+                    labels.append(label)
+            batch_labels.append(labels)
+        examples["label"] = batch_labels
+        return examples
+    
+    def _keep_minimum_labels(examples):
+        mask = []
+        for example in examples["label"]:
+            if len(example) >= minimum_labels:
+                mask.append(True)
+            else:
+                mask.append(False)
+        return mask
+    
+    # Changing example["label"] to only include labels that are less than num_labels
+    dataset = dataset.map(_keep_labels, batched=True, num_proc=num_proc, desc="Selecting labels less than num_labels")
+
+    # Removing examples that have less than minimum_labels
+    if minimum_labels > 0:
+        dataset = dataset.filter(_keep_minimum_labels, batched=True, num_proc=num_proc, desc="Filtering examples with less than minimum_labels")
+
+    return dataset

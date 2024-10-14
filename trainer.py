@@ -13,7 +13,7 @@ from transformers import AdamW, get_scheduler
 from transformers import TrainingArguments, Trainer, DefaultDataCollator
 
 from modules.config import Config
-from modules.dataset import load_dataset
+from modules.dataset import load_dataset, filter_dataset
 from modules.scheduler import CosineAnnealingWithWarmupAndEtaMin
 
 from PIL import ImageFile
@@ -53,7 +53,7 @@ def compute_metrics(p):
 
 def get_class_weights(dataset):
     labels = dataset['label']
-    class_counts = np.zeros(config.num_classes)
+    class_counts = np.zeros(config.train_classes)
     for label in labels:
         for l in label:
             class_counts[l] += 1
@@ -140,11 +140,13 @@ class CustomTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False):
         global loss_fn
+        global config
         labels = inputs.get("labels")
         outputs = model(**inputs)
         logits = outputs.get("logits")
-        logits_with_sigmoid = torch.sigmoid(logits)
-        loss = loss_fn(logits_with_sigmoid, labels)
+        logits = logits[:, :config.train_classes]
+        labels = labels[:, :config.train_classes]
+        loss = loss_fn(logits, labels)
         return (loss, outputs) if return_outputs else loss
 
 # if we are on windows, we need to check it, and set the torch backend to gloo
@@ -178,15 +180,22 @@ size = (
 
 _transforms = T.Compose([
     T.Resize(size),
-    T.CenterCrop(size), # this is for models that do not support arbitrary size input
+    T.RandomHorizontalFlip(),
+    T.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+    T.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.75, 1.25),
+                   shear=None,
+                   fill=tuple(np.array(np.array(image_processor.image_mean)*255).astype(int).tolist())),
+    T.CenterCrop(size),
     T.ToTensor(),
-    T.Normalize(mean=image_processor.image_mean, std=image_processor.image_std)])
+    T.Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
+])
 
 _val_transforms = T.Compose([
     T.Resize(size), 
-    T.CenterCrop(size), # this is for models that do not support arbitrary size input
+    T.CenterCrop(size),
     T.ToTensor(), 
-    T.Normalize(mean=image_processor.image_mean, std=image_processor.image_std)])
+    T.Normalize(mean=image_processor.image_mean, std=image_processor.image_std)
+])
 
 if __name__ == '__main__':
 
@@ -196,8 +205,9 @@ if __name__ == '__main__':
     else:
         model = AutoModelForImageClassification.from_pretrained(config.model)
     model.to(device)
-    print('Number of parameters:', model.num_parameters())
-    print('Number of classes:', model.config.num_labels)
+    print('Number of model parameters:', model.num_parameters())
+    print('Number of model classes:', model.config.num_labels)
+    print('Number of training classes:', config.train_classes)
 
     torch.cuda.empty_cache()
 
@@ -213,6 +223,10 @@ if __name__ == '__main__':
     train_dataset = train_test_split["train"]
     eval_dataset = train_test_split["test"]
 
+    # Filter dataset to only include examples with less than num_classes labels and with at least minimum_classes labels
+    train_dataset = filter_dataset(dataset=train_dataset, num_labels=config.train_classes, minimum_labels=config.minimum_classes, num_proc=config.num_workers)
+    eval_dataset = filter_dataset(dataset=eval_dataset, num_labels=config.train_classes, num_proc=config.num_workers)
+
     if accelerator.is_main_process:    
         print(f"Train dataset size: {len(train_dataset)}")
         print(f"Eval dataset size: {len(eval_dataset)}")
@@ -222,7 +236,7 @@ if __name__ == '__main__':
     # loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
 
     global loss_fn
-    loss_fn = torch.nn.BCELoss()
+    loss_fn = torch.nn.BCEWithLogitsLoss()
 
     # if accelerator.is_main_process:
     #     print('Class weights calculated:', class_weights)
