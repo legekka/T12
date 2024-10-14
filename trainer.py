@@ -138,13 +138,14 @@ class CustomTrainer(Trainer):
                 num_training_steps=num_training_steps
             )
 
-    # def compute_loss(self, model, inputs, return_outputs=False):
-    #     global loss_fn
-    #     labels = inputs.get("labels")
-    #     outputs = model(**inputs)
-    #     logits = outputs.get("logits")
-    #     loss = loss_fn(logits, labels)
-    #     return (loss, outputs) if return_outputs else loss
+    def compute_loss(self, model, inputs, return_outputs=False):
+        global loss_fn
+        labels = inputs.get("labels")
+        outputs = model(**inputs)
+        logits = outputs.get("logits")
+        logits_with_sigmoid = torch.sigmoid(logits)
+        loss = loss_fn(logits_with_sigmoid, labels)
+        return (loss, outputs) if return_outputs else loss
 
 # if we are on windows, we need to check it, and set the torch backend to gloo
 if os.name == 'nt':
@@ -220,6 +221,9 @@ if __name__ == '__main__':
     # class_weights = get_class_weights(train_dataset)
     # loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=class_weights.to(device))
 
+    global loss_fn
+    loss_fn = torch.nn.BCELoss()
+
     # if accelerator.is_main_process:
     #     print('Class weights calculated:', class_weights)
 
@@ -274,7 +278,6 @@ if __name__ == '__main__':
         eval_strategy="steps" if config.save_steps is not None or config.eval_steps is not None else "epoch",
         eval_steps=config.eval_steps if config.eval_steps is not None else config.save_steps if config.save_steps is not None else None,
         seed=4242,
-        bf16=True,
         report_to="wandb" if args.wandb else "none",
         ddp_find_unused_parameters=False,
         dataloader_persistent_workers=False,
