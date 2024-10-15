@@ -1,5 +1,5 @@
 {
-    "name": "TaggerNN-v12-ViT",
+    "name": "TaggerNN-v12-ViT-2",
     "model": "models/T12",
     "output_dir": "outputs/T12-ViT",
     "train_dataset": "data/sankaku-dataset",
