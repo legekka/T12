@@ -1,6 +1,6 @@
 {
     "name": "TaggerNN-v12-ViT",
-    "model": "models/T12",
+    "model": "models/T12-ViT",
     "output_dir": "outputs/T12-ViT-4",
     "train_dataset": "data/sankaku-dataset",
     "eval_dataset_split_size": 1000,
