@@ -34,7 +34,7 @@ class Config:
 
         self.max_seq_length = self._jsonData["max_seq_length"] if "max_seq_length" in self._jsonData else None
         self.num_classes = self._jsonData["num_classes"] if "num_classes" in self._jsonData else None
-        self.train_classes = self._jsonData["train_classes"] if "train_classes" in self._jsonData else None
+        self.train_classes = self._jsonData["train_classes"] if "train_classes" in self._jsonData else self.num_classes
         self.minimum_classes= self._jsonData["minimum_classes"] if "minimum_classes" in self._jsonData else -1
 
         self.batch_size = self._jsonData["batch_size"] if "batch_size" in self._jsonData else 8

@@ -146,8 +146,9 @@ class CustomTrainer(Trainer):
         labels = inputs.get("labels")
         outputs = model(**inputs)
         logits = outputs.get("logits")
-        logits = logits[:, :config.train_classes]
-        labels = labels[:, :config.train_classes]
+        if config.train_classes != config.num_classes:
+            logits = logits[:, :config.train_classes]
+            labels = labels[:, :config.train_classes]
         loss = loss_fn(logits, labels)
         return (loss, outputs) if return_outputs else loss
 
@@ -226,8 +227,11 @@ if __name__ == '__main__':
     eval_dataset = train_test_split["test"]
 
     # Filter dataset to only include examples with less than num_classes labels and with at least minimum_classes labels
-    train_dataset = filter_dataset(dataset=train_dataset, num_labels=config.train_classes, minimum_labels=config.minimum_classes, num_proc=config.num_workers)
-    eval_dataset = filter_dataset(dataset=eval_dataset, num_labels=config.train_classes, num_proc=config.num_workers)
+    if config.train_clsses != config.num_classes or config.minimum_classes != -1:
+        if accelerator.is_main_process:
+            print(f"Filtering dataset to include only examples with less than {config.train_classes} labels and with at least {config.minimum_classes} labels")
+        train_dataset = filter_dataset(dataset=train_dataset, num_labels=config.train_classes, minimum_labels=config.minimum_classes, num_proc=config.num_workers)
+        eval_dataset = filter_dataset(dataset=eval_dataset, num_labels=config.train_classes, num_proc=config.num_workers)
 
     if accelerator.is_main_process:    
         print(f"Train dataset size: {len(train_dataset)}")

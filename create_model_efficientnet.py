@@ -2,19 +2,13 @@ from transformers import EfficientNetForImageClassification, EfficientNetConfig
 from modules.utils import get_label2id_id2label
 
 from torch.nn import Linear
+import json
 
 label2id, id2label = get_label2id_id2label()
 
 config = EfficientNetConfig(
-    depth_coefficient=1.8,
-    depthwise_padding=[6],
-    dropout_rate=0.4,
-    hidden_act="swish",
-    hidden_dim=1792,
     id2label=id2label,
-    image_size=384,
-    label2id=label2id,
-    width_coefficient=1.4
+    image_size=448,
 )
 
 model = EfficientNetForImageClassification(config)
@@ -35,10 +29,21 @@ model.config.num_classes = len(label2id)
 print('Number of parameters:', model.num_parameters())
 print('Number of classes:', model.config.num_classes)
 
-print(model)
+# print(model)
 
 # save model to disk
 model.save_pretrained('./models/T12-EfficientNet')
+
+preprocessor_config = {
+    "do_normalize": True,
+    "do_resize": True,
+    "image_mean": [0.673, 0.608, 0.602],
+    "image_std": [0.253, 0.250, 0.239],
+    "size": 448,
+}
+
+with open('./models/T12-EfficientNet/preprocessor_config.json', 'w') as f:
+    json.dump(preprocessor_config, f)
 
 # unload model
 model = None
