@@ -227,7 +227,7 @@ if __name__ == '__main__':
     eval_dataset = train_test_split["test"]
 
     # Filter dataset to only include examples with less than num_classes labels and with at least minimum_classes labels
-    if config.train_clsses != config.num_classes or config.minimum_classes != -1:
+    if config.train_classes != config.num_classes or config.minimum_classes != -1:
         if accelerator.is_main_process:
             print(f"Filtering dataset to include only examples with less than {config.train_classes} labels and with at least {config.minimum_classes} labels")
         train_dataset = filter_dataset(dataset=train_dataset, num_labels=config.train_classes, minimum_labels=config.minimum_classes, num_proc=config.num_workers)
