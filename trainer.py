@@ -203,10 +203,11 @@ _val_transforms = T.Compose([
 if __name__ == '__main__':
 
     # Loading the model
-    if args.resume is not None:
-        model = AutoModelForImageClassification.from_pretrained(args.resume)
-    else:
-        model = AutoModelForImageClassification.from_pretrained(config.model)
+    # if args.resume is not None:
+    #     model = AutoModelForImageClassification.from_pretrained(args.resume)
+    # else:
+    #     model = AutoModelForImageClassification.from_pretrained(config.model)
+    model = AutoModelForImageClassification.from_pretrained(config.model)
     model.to(device)
     print('Number of model parameters:', model.num_parameters())
     print('Number of model classes:', model.config.num_labels)
